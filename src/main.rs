@@ -5,6 +5,13 @@ use std::process;
 fn match_pattern(input_line: &str, pattern: &str) -> bool {
     if pattern.chars().count() == 1 {
         input_line.contains(pattern)
+    } else if pattern == "\\d" {
+        for c in input_line.chars() {
+            if c.is_digit(10) {
+                return true;
+            }
+        }
+        false
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
