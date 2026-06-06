@@ -12,6 +12,13 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
             }
         }
         false
+    } else if pattern == "\\w" {
+        for c in input_line.chars() {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                return true;
+            }
+        }
+        false
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
