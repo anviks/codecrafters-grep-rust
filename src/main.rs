@@ -18,14 +18,19 @@ fn match_repeat(atom: &Atom, repeat: &Repeat, rest: &[Node], text: &[char], pos:
         matched += 1;
     }
 
-    while matched >= repeat.min as usize {
+    if matched < repeat.min as usize {
+        return false;
+    }
+
+    loop {
         if match_here(rest, text, pos + matched) {
-            return true;
+            break true;
+        }
+        if matched == repeat.min as usize {
+            break false;
         }
         matched -= 1;
     }
-
-    false
 }
 
 fn match_here(nodes: &[Node], text: &[char], pos: usize) -> bool {
