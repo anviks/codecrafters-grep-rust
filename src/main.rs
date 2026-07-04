@@ -19,6 +19,17 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
             }
         }
         false
+    } else if pattern.starts_with("[") {
+        let chars = pattern.chars();
+        for char in chars {
+            if char == ']' {
+                break;
+            }
+            if input_line.contains(char) {
+                return true;
+            }
+        }
+        false
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
@@ -26,9 +37,6 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    eprintln!("Logs from your program will appear here!");
-
     if env::args().nth(1).unwrap() != "-E" {
         println!("Expected first argument to be '-E'");
         process::exit(1);
@@ -39,7 +47,6 @@ fn main() {
 
     io::stdin().read_line(&mut input_line).unwrap();
 
-    // TODO: Uncomment the code below to pass the first stage
     if match_pattern(&input_line, &pattern) {
         process::exit(0)
     } else {
