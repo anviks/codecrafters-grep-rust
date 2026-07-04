@@ -18,6 +18,10 @@ fn match_pattern(input_line: &str, pattern: &Vec<Token>) -> bool {
         let mut i = start;
 
         for tok in pattern {
+            if i >= chars.len() {
+                start += 1;
+                continue 'outer;
+            }
             let char = chars[i];
 
             let matches = match tok {
