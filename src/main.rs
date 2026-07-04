@@ -7,7 +7,11 @@ use crate::{
     lexer::Lexer,
     token::{Atom, Node, Repeat},
 };
-use std::{env, io, process};
+use std::{
+    env,
+    io::{self, Read},
+    process,
+};
 
 fn match_repeat(
     atom: &Atom,
@@ -101,10 +105,15 @@ fn main() {
     let nodes = lexer.analyze();
     // println!("{:#?}", nodes);
 
-    let mut input_line = String::new();
-    io::stdin().read_line(&mut input_line).unwrap();
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    let lines: Vec<&str> = input
+        .split('\n')
+        .filter(|line| match_pattern(line, &nodes))
+        .collect();
 
-    if match_pattern(&input_line, &nodes) {
+    if lines.len() > 0 {
+        println!("{}", lines.join("\n"));
         process::exit(0)
     } else {
         process::exit(1)
