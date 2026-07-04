@@ -20,13 +20,21 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
         }
         false
     } else if pattern.starts_with("[") {
-        let chars = pattern.chars().skip(1);
+        let chars: Vec<char> = pattern.chars().skip(1).collect();
+        let inverse = if let Some('^') = chars.get(0) {
+            true
+        } else {
+            false
+        };
         for char in chars {
             if char == ']' {
                 break;
             }
-            if input_line.contains(char) {
+            if !inverse && input_line.contains(char) {
                 return true;
+            }
+            if inverse && !input_line.contains(char) {
+                return false;
             }
         }
         false
