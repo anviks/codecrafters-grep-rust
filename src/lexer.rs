@@ -75,13 +75,7 @@ impl Lexer {
                         _ => {}
                     }
                 }
-                _ => {
-                    let mut s = String::new();
-                    while !self.is_end() && !"^$[\\".contains(self.peek()) {
-                        s.push(self.consume());
-                    }
-                    tokens.push(Token::Literal(s));
-                }
+                _ => tokens.push(Token::Literal(self.consume())),
             };
         }
 

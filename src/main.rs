@@ -44,11 +44,9 @@ fn match_pattern(input_line: &str, pattern: &mut Vec<Token>) -> bool {
                     i += 1;
                     char.is_digit(10)
                 }
-                Token::Literal(s) => {
-                    let m = i + s.len() <= chars.len()
-                        && s.chars().eq(chars[i..i + s.len()].iter().copied());
-                    i += s.len();
-                    m
+                Token::Literal(c) => {
+                    i += 1;
+                    char == *c
                 }
                 Token::WordChar => {
                     i += 1;
