@@ -8,20 +8,29 @@ use std::io;
 use std::process;
 
 use crate::lexer::Lexer;
-use crate::token::Token;
+use crate::token::Atom;
+use crate::token::Node;
 
-fn match_pattern(input_line: &str, pattern: &mut Vec<Token>) -> bool {
+fn match_pattern(input_line: &str, pattern: &mut Vec<Node>) -> bool {
     let mut start = 0;
     let mut chars: Vec<char> = input_line.chars().collect();
 
-    let start_anchor = if let Some(Token::Start) = pattern.first() {
+    let start_anchor = if let Some(Node {
+        atom: Atom::Start,
+        repeat,
+    }) = pattern.first()
+    {
         pattern.remove(0);
         true
     } else {
         false
     };
 
-    let end_anchor = if let Some(Token::End) = pattern.last() {
+    let end_anchor = if let Some(Node {
+        atom: Atom::End,
+        repeat,
+    }) = pattern.last()
+    {
         pattern.pop();
         true
     } else {
@@ -31,32 +40,32 @@ fn match_pattern(input_line: &str, pattern: &mut Vec<Token>) -> bool {
     'outer: while start < chars.len() {
         let mut i = start;
 
-        for tok in &mut *pattern {
+        for node in &mut *pattern {
             if i >= chars.len() {
                 start += 1;
                 continue 'outer;
             }
             let char = chars[i];
 
-            let matches = match tok {
-                Token::Start | Token::End => false,
-                Token::Digit => {
+            let matches = match &node.atom {
+                Atom::Start | Atom::End => false,
+                Atom::Digit => {
                     i += 1;
                     char.is_digit(10)
                 }
-                Token::Literal(c) => {
+                Atom::Literal(c) => {
                     i += 1;
                     char == *c
                 }
-                Token::WordChar => {
+                Atom::WordChar => {
                     i += 1;
                     char.is_ascii_alphanumeric() || char == '_'
                 }
-                Token::CharGroup { chars, negated } => {
+                Atom::CharGroup { chars, negated } => {
                     i += 1;
                     !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
                 }
-                Token::CapturingGroup => todo!(),
+                Atom::CapturingGroup => todo!(),
             };
 
             if !matches {
@@ -88,12 +97,12 @@ fn main() {
 
     let pattern = env::args().nth(2).unwrap();
     let mut lexer = Lexer::new(&pattern);
-    let mut tokens = lexer.analyze();
+    let mut nodes = lexer.analyze();
 
     let mut input_line = String::new();
     io::stdin().read_line(&mut input_line).unwrap();
 
-    if match_pattern(&input_line, &mut tokens) {
+    if match_pattern(&input_line, &mut nodes) {
         process::exit(0)
     } else {
         process::exit(1)

@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::token::{Atom, Node, Repeat};
 
 pub(crate) struct Lexer {
     pattern: Vec<char>,
@@ -7,7 +7,7 @@ pub(crate) struct Lexer {
 
 impl Lexer {
     pub(crate) fn new(pattern: &String) -> Self {
-        Lexer {
+        Self {
             pattern: pattern.chars().collect(),
             pos: 0,
         }
@@ -35,7 +35,7 @@ impl Lexer {
         char
     }
 
-    fn char_group(&mut self) -> Token {
+    fn char_group(&mut self) -> Node {
         self.advance();
 
         let negated = self.peek() == '^';
@@ -50,35 +50,53 @@ impl Lexer {
 
         self.advance();
 
-        Token::CharGroup { chars, negated }
+        Node::new(Atom::CharGroup { chars, negated })
     }
 
-    pub(crate) fn analyze(&mut self) -> Vec<Token> {
-        let mut tokens = vec![];
+    pub(crate) fn analyze(&mut self) -> Vec<Node> {
+        let mut nodes = vec![];
 
         while !self.is_end() {
             match self.peek() {
                 '^' => {
-                    tokens.push(Token::Start);
+                    nodes.push(Node::new(Atom::Start));
                     self.advance();
                 }
                 '$' => {
-                    tokens.push(Token::End);
+                    nodes.push(Node::new(Atom::End));
                     self.advance();
                 }
-                '[' => tokens.push(self.char_group()),
+                '[' => nodes.push(self.char_group()),
                 '\\' => {
                     self.advance();
                     match self.consume() {
-                        'd' => tokens.push(Token::Digit),
-                        'w' => tokens.push(Token::WordChar),
+                        'd' => nodes.push(Node::new(Atom::Digit)),
+                        'w' => nodes.push(Node::new(Atom::WordChar)),
                         _ => {}
                     }
                 }
-                _ => tokens.push(Token::Literal(self.consume())),
+                '+' => {
+                    let mut node = nodes.last_mut().unwrap();
+                    node.repeat = Repeat { min: 1, max: None };
+                    self.advance();
+                }
+                '?' => {
+                    let mut node = nodes.last_mut().unwrap();
+                    node.repeat = Repeat {
+                        min: 0,
+                        max: Some(1),
+                    };
+                    self.advance();
+                }
+                '*' => {
+                    let mut node = nodes.last_mut().unwrap();
+                    node.repeat = Repeat { min: 0, max: None };
+                    self.advance();
+                }
+                _ => nodes.push(Node::new(Atom::Literal(self.consume()))),
             };
         }
 
-        tokens
+        nodes
     }
 }
