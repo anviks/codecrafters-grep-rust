@@ -3,13 +3,11 @@
 mod lexer;
 mod token;
 
-use std::env;
-use std::io;
-use std::process;
-
-use crate::lexer::Lexer;
-use crate::token::Atom;
-use crate::token::Node;
+use crate::{
+    lexer::Lexer,
+    token::{Atom, Node},
+};
+use std::{env, io, process};
 
 fn match_pattern(input_line: &str, pattern: &mut Vec<Node>) -> bool {
     let mut start = 0;
@@ -46,27 +44,8 @@ fn match_pattern(input_line: &str, pattern: &mut Vec<Node>) -> bool {
                 continue 'outer;
             }
             let char = chars[i];
-
-            let matches = match &node.atom {
-                Atom::Start | Atom::End => false,
-                Atom::Digit => {
-                    i += 1;
-                    char.is_digit(10)
-                }
-                Atom::Literal(c) => {
-                    i += 1;
-                    char == *c
-                }
-                Atom::WordChar => {
-                    i += 1;
-                    char.is_ascii_alphanumeric() || char == '_'
-                }
-                Atom::CharGroup { chars, negated } => {
-                    i += 1;
-                    !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
-                }
-                Atom::CapturingGroup => todo!(),
-            };
+            let matches = node.atom.matches(char);
+            i += 1;
 
             if !matches {
                 if start_anchor {

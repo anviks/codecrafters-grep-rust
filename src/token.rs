@@ -15,6 +15,21 @@ pub(crate) enum Atom {
     CapturingGroup,
 }
 
+impl Atom {
+    pub(crate) fn matches(&self, char: char) -> bool {
+        match &self {
+            Atom::Start | Atom::End => false,
+            Atom::Digit => char.is_digit(10),
+            Atom::Literal(c) => char == *c,
+            Atom::WordChar => char.is_ascii_alphanumeric() || char == '_',
+            Atom::CharGroup { chars, negated } => {
+                !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
+            }
+            Atom::CapturingGroup => todo!(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Node {
     pub(crate) atom: Atom,
