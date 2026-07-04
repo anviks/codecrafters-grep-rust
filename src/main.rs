@@ -9,6 +9,25 @@ use crate::{
 };
 use std::{env, io, process};
 
+fn match_repeat(atom: &Atom, repeat: &Repeat, rest: &[Node], text: &[char], pos: usize) -> bool {
+    let mut matched: usize = 0;
+    while repeat.max.map(|m| matched < m as usize).unwrap_or(true)
+        && pos + matched < text.len()
+        && atom.matches(text[pos + matched])
+    {
+        matched += 1;
+    }
+
+    while matched >= repeat.min as usize {
+        if match_here(rest, text, pos + matched) {
+            return true;
+        }
+        matched -= 1;
+    }
+
+    false
+}
+
 fn match_here(nodes: &[Node], text: &[char], pos: usize) -> bool {
     let Some((node, rest)) = nodes.split_first() else {
         return true;
@@ -17,7 +36,7 @@ fn match_here(nodes: &[Node], text: &[char], pos: usize) -> bool {
     match &node.atom {
         Atom::Start => pos == 0 && match_here(rest, text, pos),
         Atom::End => pos == text.len() && match_here(rest, text, pos),
-        atom => pos < text.len() && atom.matches(text[pos]) && match_here(rest, text, pos + 1),
+        atom => match_repeat(atom, &node.repeat, rest, text, pos),
     }
 }
 
