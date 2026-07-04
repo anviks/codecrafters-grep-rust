@@ -20,8 +20,9 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
         }
         false
     } else if pattern.starts_with("[") {
-        let chars: Vec<char> = pattern.chars().skip(1).collect();
+        let mut chars: Vec<char> = pattern.chars().skip(1).collect();
         let inverse = if let Some('^') = chars.get(0) {
+            chars = chars[1..].to_vec();
             true
         } else {
             false
