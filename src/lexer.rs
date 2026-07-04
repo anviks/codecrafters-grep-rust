@@ -75,6 +75,10 @@ impl Lexer {
                         _ => {}
                     }
                 }
+                '.' => {
+                    nodes.push(Node::new(Atom::WildCard));
+                    self.advance();
+                }
                 '+' => {
                     let mut node = nodes.last_mut().unwrap();
                     node.repeat = Repeat { min: 1, max: None };

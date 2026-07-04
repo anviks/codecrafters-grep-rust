@@ -11,6 +11,7 @@ pub(crate) enum Atom {
     Digit,
     Literal(char),
     WordChar,
+    WildCard,
     CharGroup { chars: Vec<char>, negated: bool },
     CapturingGroup,
 }
@@ -25,6 +26,7 @@ impl Atom {
             Atom::CharGroup { chars, negated } => {
                 !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
             }
+            Atom::WildCard => true,
             Atom::CapturingGroup => todo!(),
         }
     }
