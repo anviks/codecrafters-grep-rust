@@ -9,7 +9,13 @@ use crate::{
 };
 use std::{env, io, process};
 
-fn match_repeat(atom: &Atom, repeat: &Repeat, rest: &[Node], text: &[char], pos: usize) -> bool {
+fn match_repeat(
+    atom: &Atom,
+    repeat: &Repeat,
+    rest: &[Node],
+    text: &[char],
+    pos: usize,
+) -> Option<usize> {
     let mut matched: usize = 0;
     while repeat.max.map(|m| matched < m as usize).unwrap_or(true)
         && pos + matched < text.len()
@@ -19,28 +25,51 @@ fn match_repeat(atom: &Atom, repeat: &Repeat, rest: &[Node], text: &[char], pos:
     }
 
     if matched < repeat.min as usize {
-        return false;
+        return None;
     }
 
     loop {
-        if match_here(rest, text, pos + matched) {
-            break true;
+        if let Some(n) = match_here(rest, text, pos + matched) {
+            break Some(n);
         }
         if matched == repeat.min as usize {
-            break false;
+            break None;
         }
         matched -= 1;
     }
 }
 
-fn match_here(nodes: &[Node], text: &[char], pos: usize) -> bool {
+fn match_here(nodes: &[Node], text: &[char], pos: usize) -> Option<usize> {
     let Some((node, rest)) = nodes.split_first() else {
-        return true;
+        return Some(pos);
     };
 
     match &node.atom {
-        Atom::Start => pos == 0 && match_here(rest, text, pos),
-        Atom::End => pos == text.len() && match_here(rest, text, pos),
+        Atom::Start => {
+            if pos == 0 {
+                match_here(rest, text, pos)
+            } else {
+                None
+            }
+        }
+        Atom::End => {
+            if pos == text.len() {
+                match_here(rest, text, pos)
+            } else {
+                None
+            }
+        }
+        Atom::Group { alternatives } => {
+            for alt in alternatives {
+                if let Some(p) = match_here(alt, text, pos)
+                    && let Some(p_rest) = match_here(rest, text, p)
+                {
+                    return Some(p_rest);
+                }
+            }
+
+            None
+        }
         atom => match_repeat(atom, &node.repeat, rest, text, pos),
     }
 }
@@ -51,7 +80,7 @@ fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> bool {
     let mut start = 0;
     while start <= chars.len() {
         let matches = match_here(pattern, &chars, start);
-        if matches {
+        if let Some(n) = matches {
             return true;
         }
         start += 1;

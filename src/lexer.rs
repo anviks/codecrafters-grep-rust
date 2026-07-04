@@ -53,10 +53,26 @@ impl Lexer {
         Node::new(Atom::CharGroup { chars, negated })
     }
 
-    pub(crate) fn analyze(&mut self) -> Vec<Node> {
+    fn group(&mut self) -> Node {
+        self.advance();
+        
+        let mut alternatives = vec![];
+        while ![')', '\0'].contains(&self.peek()) {
+            alternatives.push(self.analyze_until(&['|', ')', '\0']));
+            if self.peek() == '|' {
+                self.advance();
+            }
+        }
+
+        self.advance();
+
+        Node::new(Atom::Group { alternatives })
+    }
+
+    fn analyze_until(&mut self, until: &[char]) -> Vec<Node> {
         let mut nodes = vec![];
 
-        while !self.is_end() {
+        while !until.contains(&self.peek()) {
             match self.peek() {
                 '^' => {
                     nodes.push(Node::new(Atom::Start));
@@ -67,6 +83,7 @@ impl Lexer {
                     self.advance();
                 }
                 '[' => nodes.push(self.char_group()),
+                '(' => nodes.push(self.group()),
                 '\\' => {
                     self.advance();
                     match self.consume() {
@@ -102,5 +119,14 @@ impl Lexer {
         }
 
         nodes
+    }
+
+    pub(crate) fn analyze(&mut self) -> Vec<Node> {
+        let mut alternatives = vec![];
+        while !self.is_end() {
+            alternatives.push(self.analyze_until(&['|', '\0']));
+            self.advance();
+        }
+        vec![Node::new(Atom::Group { alternatives })]
     }
 }

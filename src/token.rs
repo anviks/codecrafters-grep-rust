@@ -13,13 +13,13 @@ pub(crate) enum Atom {
     WordChar,
     WildCard,
     CharGroup { chars: Vec<char>, negated: bool },
-    CapturingGroup,
+    Group { alternatives: Vec<Vec<Node>> },
 }
 
 impl Atom {
     pub(crate) fn matches(&self, char: char) -> bool {
         match &self {
-            Atom::Start | Atom::End => false,
+            Atom::Start | Atom::End | Atom::Group { alternatives: _ } => false,
             Atom::Digit => char.is_digit(10),
             Atom::Literal(c) => char == *c,
             Atom::WordChar => char.is_ascii_alphanumeric() || char == '_',
@@ -27,7 +27,6 @@ impl Atom {
                 !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
             }
             Atom::WildCard => true,
-            Atom::CapturingGroup => todo!(),
         }
     }
 }
