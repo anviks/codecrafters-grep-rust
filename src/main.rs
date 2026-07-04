@@ -10,14 +10,28 @@ use std::process;
 use crate::lexer::Lexer;
 use crate::token::Token;
 
-fn match_pattern(input_line: &str, pattern: &Vec<Token>) -> bool {
+fn match_pattern(input_line: &str, pattern: &mut Vec<Token>) -> bool {
     let mut start = 0;
-    let chars: Vec<char> = input_line.chars().collect();
+    let mut chars: Vec<char> = input_line.chars().collect();
+
+    let start_anchor = if let Some(Token::Start) = pattern.first() {
+        pattern.remove(0);
+        true
+    } else {
+        false
+    };
+
+    let end_anchor = if let Some(Token::End) = pattern.last() {
+        pattern.pop();
+        true
+    } else {
+        false
+    };
 
     'outer: while start < chars.len() {
         let mut i = start;
 
-        for tok in pattern {
+        for tok in &mut *pattern {
             if i >= chars.len() {
                 start += 1;
                 continue 'outer;
@@ -42,15 +56,23 @@ fn match_pattern(input_line: &str, pattern: &Vec<Token>) -> bool {
                 }
                 Token::CharGroup { chars, negated } => {
                     i += 1;
-                    !negated && chars.contains(&char) || *negated && !chars.contains(&char)
+                    !*negated && chars.contains(&char) || *negated && !chars.contains(&char)
                 }
                 Token::CapturingGroup => todo!(),
             };
 
             if !matches {
+                if start_anchor {
+                    return false;
+                }
                 start += 1;
                 continue 'outer;
             }
+        }
+
+        if end_anchor && i != chars.len() {
+            start += 1;
+            continue;
         }
 
         return true;
@@ -68,12 +90,12 @@ fn main() {
 
     let pattern = env::args().nth(2).unwrap();
     let mut lexer = Lexer::new(&pattern);
-    let tokens = lexer.analyze();
+    let mut tokens = lexer.analyze();
 
     let mut input_line = String::new();
     io::stdin().read_line(&mut input_line).unwrap();
 
-    if match_pattern(&input_line, &tokens) {
+    if match_pattern(&input_line, &mut tokens) {
         process::exit(0)
     } else {
         process::exit(1)
