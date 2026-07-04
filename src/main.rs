@@ -30,11 +30,8 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
             if char == ']' {
                 break;
             }
-            if !inverse && input_line.contains(char) {
+            if !inverse && input_line.contains(char) || inverse && !input_line.contains(char) {
                 return true;
-            }
-            if inverse && !input_line.contains(char) {
-                return false;
             }
         }
         false
