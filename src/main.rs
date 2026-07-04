@@ -20,7 +20,7 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
         }
         false
     } else if pattern.starts_with("[") {
-        let chars = pattern.chars();
+        let chars = pattern.chars().skip(1);
         for char in chars {
             if char == ']' {
                 break;
