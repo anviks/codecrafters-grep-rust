@@ -12,6 +12,7 @@ use std::{
     io::{self, Read},
     process,
 };
+use clap::Parser;
 
 fn match_repeat(
     atom: &Atom,
@@ -92,18 +93,27 @@ fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
     results
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(short = 'E', long)]
+    extended_regexp: bool,
+
+    #[arg(short, long)]
+    only_matching: bool,
+
+    pattern: String,
+}
+
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if !args.contains(&"-E".to_string()) {
+    let args = Args::parse();
+
+    if !args.extended_regexp {
         println!("Expected argument '-E' to be present");
         process::exit(1);
     }
 
-    let only_match = args.contains(&"-o".to_string());
-
-    let pattern = args.last().unwrap();
-    let mut lexer = Lexer::new(&pattern);
+    let mut lexer = Lexer::new(&args.pattern);
     let nodes = lexer.analyze();
     // println!("{:#?}", nodes);
 
@@ -116,7 +126,7 @@ fn main() {
         .collect();
 
     if matching_lines.len() > 0 {
-        if only_match {
+        if args.only_matching {
             for (line, matches) in matching_lines {
                 for (start, end) in matches {
                     println!("{}", &line[start..end])
