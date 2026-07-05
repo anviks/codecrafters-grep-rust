@@ -11,11 +11,13 @@ use crate::{
 };
 use clap::{ColorChoice, Parser};
 use std::{
-    env, fs,
+    env,
+    fs::{self, DirEntry, Metadata},
     io::{self, IsTerminal, Read},
     process,
     slice::SliceIndex,
 };
+use walkdir::WalkDir;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -28,9 +30,17 @@ struct Args {
     #[arg(long, default_value_t = ColorChoice::Never)]
     color: ColorChoice,
 
+    #[arg(short, long)]
+    recursive: bool,
+
     pattern: String,
 
-    filenames: Vec<String>,
+    paths: Vec<String>,
+}
+
+struct Input {
+    string: String,
+    filename: Option<String>,
 }
 
 fn slice<R>(chars: &[char], range: R) -> String
@@ -101,20 +111,54 @@ fn main() {
     };
 
     let mut anything_matched = false;
+    let mut had_error = false;
     let mut inputs = vec![];
 
-    if !args.filenames.is_empty() {
-        for filename in &args.filenames {
-            inputs.push(fs::read_to_string(filename).unwrap());
+    if !args.paths.is_empty() {
+        let multiple_files = args.paths.len() > 1;
+        for path in args.paths {
+            match fs::metadata(&path) {
+                Ok(meta) => {
+                    if meta.is_file() {
+                        inputs.push(Input {
+                            string: fs::read_to_string(&path).unwrap(),
+                            filename: if multiple_files { Some(path) } else { None },
+                        });
+                    } else if args.recursive {
+                        for p in WalkDir::new(&path)
+                            .into_iter()
+                            .filter_map(Result::ok)
+                            .filter(|e| e.file_type().is_file())
+                            .map(|e| e.into_path())
+                        {
+                            inputs.push(Input {
+                                string: fs::read_to_string(&p).unwrap(),
+                                filename: Some(p.to_str().unwrap().to_string()),
+                            });
+                        }
+                    } else {
+                        eprintln!("grep: {}: Is a directory", &path);
+                        had_error = true;
+                    }
+                }
+                Err(e) => {
+                    eprintln!("grep: {}: {}", &path, e);
+                    had_error = true;
+                }
+            };
         }
     } else {
         let mut input = String::new();
         io::stdin().read_to_string(&mut input).unwrap();
-        inputs.push(input);
+        inputs.push(Input {
+            string: input,
+            filename: None,
+        });
     }
 
     for (i, input) in inputs.iter().enumerate() {
         let matching_lines: Vec<(Vec<char>, Vec<(usize, usize)>)> = input
+            .string
             .split('\n')
             .map(|line| {
                 let chars = line.chars().collect();
@@ -125,17 +169,17 @@ fn main() {
             .collect();
 
         if matching_lines.len() > 0 {
-            let filename = if args.filenames.len() > 1 {
-                Some(&args.filenames[i])
-            } else {
-                None
-            };
-            print_matching_lines(&matching_lines, args.only_matching, show_color, filename);
+            print_matching_lines(
+                &matching_lines,
+                args.only_matching,
+                show_color,
+                input.filename.as_ref(),
+            );
             anything_matched = true;
         }
     }
 
-    if anything_matched {
+    if anything_matched && !had_error {
         process::exit(0)
     } else {
         process::exit(1)
