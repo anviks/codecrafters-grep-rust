@@ -62,7 +62,9 @@ fn match_here(
                     if *index > 0 {
                         captures[*index - 1] = Some((pos, p));
                     }
-                    if let Some(p_rest) = match_here(rest, text, p, captures) {
+                    let mut combined = alt.clone();
+                    combined.extend_from_slice(rest);
+                    if let Some(p_rest) = match_here(&combined, text, pos, captures) {
                         return Some(p_rest);
                     }
                 }

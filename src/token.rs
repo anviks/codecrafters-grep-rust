@@ -6,7 +6,7 @@ pub(crate) struct Repeat {
     pub(crate) max: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Atom {
     Start,
     End,
@@ -46,7 +46,7 @@ impl Atom {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Node {
     pub(crate) atom: Atom,
     pub(crate) repeat: Repeat,
