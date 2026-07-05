@@ -11,7 +11,9 @@ use clap::{ColorChoice, Parser};
 use std::{
     env, fs,
     io::{self, IsTerminal, Read},
+    ops::{Range, RangeBounds},
     process,
+    slice::SliceIndex,
 };
 
 fn match_repeat(
@@ -76,13 +78,12 @@ fn match_here(nodes: &[Node], text: &[char], pos: usize) -> Option<usize> {
     }
 }
 
-fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
-    let chars: Vec<char> = input_line.chars().collect();
+fn match_pattern(chars: &Vec<char>, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
     let mut results = vec![];
 
     let mut start = 0;
     while start <= chars.len() {
-        let matches = match_here(pattern, &chars, start);
+        let matches = match_here(pattern, chars, start);
         if let Some(n) = matches {
             results.push((start, n));
             start = n;
@@ -92,6 +93,13 @@ fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
     }
 
     results
+}
+
+fn slice<R>(chars: &[char], range: R) -> String
+where
+    R: SliceIndex<[char], Output = [char]>,
+{
+    chars[range].iter().collect()
 }
 
 #[derive(Parser, Debug)]
@@ -129,10 +137,14 @@ fn main() {
     } else {
         io::stdin().read_to_string(&mut input).unwrap();
     }
-    let matching_lines: Vec<(&str, Vec<(usize, usize)>)> = input
+    let matching_lines: Vec<(Vec<char>, Vec<(usize, usize)>)> = input
         .split('\n')
-        .map(|line| (line, match_pattern(line, &nodes)))
-        .filter(|(_, matches)| matches.len() > 0)
+        .map(|line| {
+            let chars = line.chars().collect();
+            let matches = match_pattern(&chars, &nodes);
+            (chars, matches)
+        })
+        .filter(|(_, matches)| !matches.is_empty())
         .collect();
 
     let show_color = match args.color {
@@ -145,29 +157,31 @@ fn main() {
         if args.only_matching {
             for (line, matches) in matching_lines {
                 for (start, end) in matches {
+                    let text = slice(&line, start..end);
                     if show_color {
-                        println!("\x1B[01;31m{}\x1B[m", &line[start..end]);
+                        println!("\x1B[01;31m{}\x1B[m", text);
                     } else {
-                        println!("{}", &line[start..end]);
+                        println!("{}", text);
                     }
                 }
             }
         } else {
             for (line, matches) in matching_lines {
-                print!("{}", &line[..matches[0].0]);
+                print!("{}", slice(&line, ..matches[0].0));
                 let mut i = 0;
                 while i < matches.len() {
                     let (start, end) = matches[i];
+                    let text = slice(&line, start..end);
                     if show_color {
-                        print!("\x1B[01;31m{}\x1B[m", &line[start..end]);
+                        print!("\x1B[01;31m{}\x1B[m", text);
                     } else {
-                        print!("{}", &line[start..end]);
+                        print!("{}", text);
                     }
                     i += 1;
                     if i < matches.len() {
-                        print!("{}", &line[end..matches[i].0]);
+                        print!("{}", slice(&line, end..matches[i].0));
                     } else {
-                        println!("{}", &line[end..]);
+                        println!("{}", slice(&line, end..));
                     }
                 }
             }
