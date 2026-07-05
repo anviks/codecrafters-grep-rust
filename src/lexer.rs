@@ -67,6 +67,10 @@ impl Lexer {
         self.advance();
 
         let mut alternatives = vec![];
+
+        self.current_group += 1;
+        let index = self.current_group;
+
         while ![')', '\0'].contains(&self.peek()) {
             alternatives.push(self.analyze_until(&['|', ')', '\0']));
             if self.peek() == '|' {
@@ -76,9 +80,8 @@ impl Lexer {
 
         self.advance();
 
-        self.current_group += 1;
         Node::new(Atom::Group {
-            index: self.current_group,
+            index,
             alternatives,
         })
     }

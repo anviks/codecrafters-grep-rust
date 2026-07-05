@@ -27,7 +27,7 @@ struct Args {
     #[arg(short, long)]
     only_matching: bool,
 
-    #[arg(long, default_value_t = ColorChoice::Never)]
+    #[arg(long, default_value_t = ColorChoice::Auto)]
     color: ColorChoice,
 
     #[arg(short, long)]
@@ -93,7 +93,6 @@ fn print_matching_lines(
 
 fn main() {
     let args = Args::parse();
-    // println!("{args:?}");
 
     if !args.extended_regexp {
         println!("Expected argument '-E' to be present");
@@ -102,7 +101,6 @@ fn main() {
 
     let mut lexer = Lexer::new(&args.pattern);
     let nodes = lexer.analyze();
-    // println!("{nodes:#?}");
 
     let show_color = match args.color {
         ColorChoice::Auto if std::io::stdout().is_terminal() => true,
