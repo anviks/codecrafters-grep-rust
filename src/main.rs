@@ -75,42 +75,58 @@ fn match_here(nodes: &[Node], text: &[char], pos: usize) -> Option<usize> {
     }
 }
 
-fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> bool {
+fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
     let chars: Vec<char> = input_line.chars().collect();
+    let mut results = vec![];
 
     let mut start = 0;
     while start <= chars.len() {
         let matches = match_here(pattern, &chars, start);
         if let Some(n) = matches {
-            return true;
+            results.push((start, n));
+            start = n;
         }
         start += 1;
     }
 
-    false
+    results
 }
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
-    if env::args().nth(1).unwrap() != "-E" {
-        println!("Expected first argument to be '-E'");
+    let args: Vec<String> = env::args().collect();
+    if !args.contains(&"-E".to_string()) {
+        println!("Expected argument '-E' to be present");
         process::exit(1);
     }
 
-    let pattern = env::args().nth(2).unwrap();
+    let only_match = args.contains(&"-o".to_string());
+
+    let pattern = args.last().unwrap();
     let mut lexer = Lexer::new(&pattern);
     let nodes = lexer.analyze();
     // println!("{:#?}", nodes);
 
     let mut input = String::new();
     io::stdin().read_to_string(&mut input).unwrap();
-    let lines: Vec<&str> = input
+    let matching_lines: Vec<(&str, Vec<(usize, usize)>)> = input
         .split('\n')
-        .filter(|line| match_pattern(line, &nodes))
+        .map(|line| (line, match_pattern(line, &nodes)))
+        .filter(|(_, matches)| matches.len() > 0)
         .collect();
 
-    if lines.len() > 0 {
-        println!("{}", lines.join("\n"));
+    if matching_lines.len() > 0 {
+        if only_match {
+            for (line, matches) in matching_lines {
+                for (start, end) in matches {
+                    println!("{}", &line[start..end])
+                }
+            }
+        } else {
+            for (line, _) in matching_lines {
+                println!("{}", line);
+            }
+        }
         process::exit(0)
     } else {
         process::exit(1)

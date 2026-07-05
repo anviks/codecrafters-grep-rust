@@ -105,7 +105,7 @@ impl Lexer {
                     self.advance();
                 }
                 '+' => {
-                    let mut node = nodes.last_mut().unwrap();
+                    let node = nodes.last_mut().unwrap();
                     node.repeat = Repeat {
                         min: 1,
                         max: usize::MAX,
@@ -113,12 +113,12 @@ impl Lexer {
                     self.advance();
                 }
                 '?' => {
-                    let mut node = nodes.last_mut().unwrap();
+                    let node = nodes.last_mut().unwrap();
                     node.repeat = Repeat { min: 0, max: 1 };
                     self.advance();
                 }
                 '{' => {
-                    let mut node = nodes.last_mut().unwrap();
+                    let node = nodes.last_mut().unwrap();
                     self.advance();
                     let min = self.number();
                     let max = if self.consume() == ',' {
@@ -135,7 +135,7 @@ impl Lexer {
                     node.repeat = Repeat { min, max };
                 }
                 '*' => {
-                    let mut node = nodes.last_mut().unwrap();
+                    let node = nodes.last_mut().unwrap();
                     node.repeat = Repeat {
                         min: 0,
                         max: usize::MAX,
