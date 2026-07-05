@@ -35,6 +35,14 @@ impl Lexer {
         char
     }
 
+    fn number(&mut self) -> usize {
+        let mut s = String::new();
+        while self.peek().is_ascii_digit() {
+            s.push(self.consume());
+        }
+        s.parse::<usize>().unwrap()
+    }
+
     fn char_group(&mut self) -> Node {
         self.advance();
 
@@ -55,7 +63,7 @@ impl Lexer {
 
     fn group(&mut self) -> Node {
         self.advance();
-        
+
         let mut alternatives = vec![];
         while ![')', '\0'].contains(&self.peek()) {
             alternatives.push(self.analyze_until(&['|', ')', '\0']));
@@ -108,6 +116,21 @@ impl Lexer {
                         max: Some(1),
                     };
                     self.advance();
+                }
+                '{' => {
+                    let mut node = nodes.last_mut().unwrap();
+                    self.advance();
+                    let min = self.number();
+                    let max = if self.consume() == ',' {
+                        if self.consume() == '}' {
+                            None
+                        } else {
+                            Some(self.number())
+                        }
+                    } else {
+                        Some(min)
+                    };
+                    node.repeat = Repeat { min, max };
                 }
                 '*' => {
                     let mut node = nodes.last_mut().unwrap();

@@ -1,7 +1,7 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Repeat {
-    pub(crate) min: u32,
-    pub(crate) max: Option<u32>,
+    pub(crate) min: usize,
+    pub(crate) max: Option<usize>,
 }
 
 #[derive(Debug)]
