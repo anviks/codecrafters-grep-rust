@@ -7,12 +7,12 @@ use crate::{
     lexer::Lexer,
     token::{Atom, Node, Repeat},
 };
+use clap::{ColorChoice, Parser};
 use std::{
     env,
-    io::{self, Read},
+    io::{self, IsTerminal, Read},
     process,
 };
-use clap::Parser;
 
 fn match_repeat(
     atom: &Atom,
@@ -101,6 +101,9 @@ struct Args {
     #[arg(short, long)]
     only_matching: bool,
 
+    #[arg(long, default_value_t = ColorChoice::Never)]
+    color: ColorChoice,
+
     pattern: String,
 }
 
@@ -125,16 +128,41 @@ fn main() {
         .filter(|(_, matches)| matches.len() > 0)
         .collect();
 
+    let show_color = match args.color {
+        ColorChoice::Auto if std::io::stdout().is_terminal() => true,
+        ColorChoice::Always => true,
+        _ => false,
+    };
+
     if matching_lines.len() > 0 {
         if args.only_matching {
             for (line, matches) in matching_lines {
                 for (start, end) in matches {
-                    println!("{}", &line[start..end])
+                    if show_color {
+                        println!("\x1B[01;31m{}\x1B[m", &line[start..end]);
+                    } else {
+                        println!("{}", &line[start..end]);
+                    }
                 }
             }
         } else {
-            for (line, _) in matching_lines {
-                println!("{}", line);
+            for (line, matches) in matching_lines {
+                print!("{}", &line[..matches[0].0]);
+                let mut i = 0;
+                while i < matches.len() {
+                    let (start, end) = matches[i];
+                    if show_color {
+                        print!("\x1B[01;31m{}\x1B[m", &line[start..end]);
+                    } else {
+                        print!("{}", &line[start..end]);
+                    }
+                    i += 1;
+                    if i < matches.len() {
+                        print!("{}", &line[end..matches[i].0]);
+                    } else {
+                        println!("{}", &line[end..]);
+                    }
+                }
             }
         }
         process::exit(0)
