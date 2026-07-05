@@ -86,8 +86,9 @@ fn match_pattern(input_line: &str, pattern: &Vec<Node>) -> Vec<(usize, usize)> {
         if let Some(n) = matches {
             results.push((start, n));
             start = n;
+        } else {
+            start += 1;
         }
-        start += 1;
     }
 
     results
