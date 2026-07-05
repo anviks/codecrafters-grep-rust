@@ -1,7 +1,7 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Repeat {
     pub(crate) min: usize,
-    pub(crate) max: Option<usize>,
+    pub(crate) max: usize,
 }
 
 #[derive(Debug)]
@@ -41,10 +41,7 @@ impl Node {
     pub(crate) fn new(atom: Atom) -> Self {
         Self {
             atom,
-            repeat: Repeat {
-                min: 1,
-                max: Some(1),
-            },
+            repeat: Repeat { min: 1, max: 1 },
         }
     }
 }

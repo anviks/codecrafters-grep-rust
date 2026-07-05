@@ -21,10 +21,7 @@ fn match_repeat(
     pos: usize,
 ) -> Option<usize> {
     let mut matched: usize = 0;
-    while repeat.max.map(|m| matched < m as usize).unwrap_or(true)
-        && pos + matched < text.len()
-        && atom.matches(text[pos + matched])
-    {
+    while matched < repeat.max && pos + matched < text.len() && atom.matches(text[pos + matched]) {
         matched += 1;
     }
 

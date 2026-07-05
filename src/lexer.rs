@@ -106,15 +106,15 @@ impl Lexer {
                 }
                 '+' => {
                     let mut node = nodes.last_mut().unwrap();
-                    node.repeat = Repeat { min: 1, max: None };
+                    node.repeat = Repeat {
+                        min: 1,
+                        max: usize::MAX,
+                    };
                     self.advance();
                 }
                 '?' => {
                     let mut node = nodes.last_mut().unwrap();
-                    node.repeat = Repeat {
-                        min: 0,
-                        max: Some(1),
-                    };
+                    node.repeat = Repeat { min: 0, max: 1 };
                     self.advance();
                 }
                 '{' => {
@@ -123,20 +123,23 @@ impl Lexer {
                     let min = self.number();
                     let max = if self.consume() == ',' {
                         let num = if self.peek() == '}' {
-                            None
+                            usize::MAX
                         } else {
-                            Some(self.number())
+                            self.number()
                         };
                         self.advance();
                         num
                     } else {
-                        Some(min)
+                        min
                     };
                     node.repeat = Repeat { min, max };
                 }
                 '*' => {
                     let mut node = nodes.last_mut().unwrap();
-                    node.repeat = Repeat { min: 0, max: None };
+                    node.repeat = Repeat {
+                        min: 0,
+                        max: usize::MAX,
+                    };
                     self.advance();
                 }
                 _ => nodes.push(Node::new(Atom::Literal(self.consume()))),
