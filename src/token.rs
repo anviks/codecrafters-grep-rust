@@ -1,3 +1,5 @@
+use crate::token::Atom::BackReference;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Repeat {
     pub(crate) min: usize,
@@ -12,14 +14,27 @@ pub(crate) enum Atom {
     Literal(char),
     WordChar,
     WildCard,
-    CharGroup { chars: Vec<char>, negated: bool },
-    Group { alternatives: Vec<Vec<Node>> },
+    CharGroup {
+        chars: Vec<char>,
+        negated: bool,
+    },
+    Group {
+        index: usize,
+        alternatives: Vec<Vec<Node>>,
+    },
+    BackReference(usize),
 }
 
 impl Atom {
     pub(crate) fn matches(&self, char: char) -> bool {
         match &self {
-            Atom::Start | Atom::End | Atom::Group { alternatives: _ } => false,
+            Atom::Start
+            | Atom::End
+            | Atom::Group {
+                alternatives: _,
+                index: _,
+            }
+            | BackReference(_) => false,
             Atom::Digit => char.is_digit(10),
             Atom::Literal(c) => char == *c,
             Atom::WordChar => char.is_ascii_alphanumeric() || char == '_',

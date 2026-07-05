@@ -133,7 +133,7 @@ fn main() {
                         {
                             inputs.push(Input {
                                 string: fs::read_to_string(&p).unwrap(),
-                                filename: Some(p.to_str().unwrap().to_string()),
+                                filename: Some(p.to_string_lossy().to_string()),
                             });
                         }
                     } else {
@@ -162,7 +162,7 @@ fn main() {
             .split('\n')
             .map(|line| {
                 let chars = line.chars().collect();
-                let matches = match_pattern(&chars, &nodes);
+                let matches = match_pattern(&chars, &nodes, lexer.current_group);
                 (chars, matches)
             })
             .filter(|(_, matches)| !matches.is_empty())

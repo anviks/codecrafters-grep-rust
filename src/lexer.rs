@@ -3,6 +3,7 @@ use crate::token::{Atom, Node, Repeat};
 pub(crate) struct Lexer {
     pattern: Vec<char>,
     pos: usize,
+    pub(crate) current_group: usize,
 }
 
 impl Lexer {
@@ -10,6 +11,7 @@ impl Lexer {
         Self {
             pattern: pattern.chars().collect(),
             pos: 0,
+            current_group: 0,
         }
     }
 
@@ -74,7 +76,11 @@ impl Lexer {
 
         self.advance();
 
-        Node::new(Atom::Group { alternatives })
+        self.current_group += 1;
+        Node::new(Atom::Group {
+            index: self.current_group,
+            alternatives,
+        })
     }
 
     fn analyze_until(&mut self, until: &[char]) -> Vec<Node> {
@@ -94,9 +100,16 @@ impl Lexer {
                 '(' => nodes.push(self.group()),
                 '\\' => {
                     self.advance();
-                    match self.consume() {
-                        'd' => nodes.push(Node::new(Atom::Digit)),
-                        'w' => nodes.push(Node::new(Atom::WordChar)),
+                    match self.peek() {
+                        'd' => {
+                            nodes.push(Node::new(Atom::Digit));
+                            self.advance();
+                        }
+                        'w' => {
+                            nodes.push(Node::new(Atom::WordChar));
+                            self.advance();
+                        }
+                        '0'..='9' => nodes.push(Node::new(Atom::BackReference(self.number()))),
                         _ => {}
                     }
                 }
@@ -155,6 +168,9 @@ impl Lexer {
             alternatives.push(self.analyze_until(&['|', '\0']));
             self.advance();
         }
-        vec![Node::new(Atom::Group { alternatives })]
+        vec![Node::new(Atom::Group {
+            alternatives,
+            index: 0,
+        })]
     }
 }
