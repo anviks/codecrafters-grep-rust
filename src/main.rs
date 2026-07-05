@@ -9,7 +9,7 @@ use crate::{
 };
 use clap::{ColorChoice, Parser};
 use std::{
-    env,
+    env, fs,
     io::{self, IsTerminal, Read},
     process,
 };
@@ -106,6 +106,8 @@ struct Args {
     color: ColorChoice,
 
     pattern: String,
+
+    filename: Option<String>,
 }
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
@@ -122,7 +124,11 @@ fn main() {
     // println!("{:#?}", nodes);
 
     let mut input = String::new();
-    io::stdin().read_to_string(&mut input).unwrap();
+    if let Some(filename) = args.filename {
+        input = fs::read_to_string(filename).unwrap();
+    } else {
+        io::stdin().read_to_string(&mut input).unwrap();
+    }
     let matching_lines: Vec<(&str, Vec<(usize, usize)>)> = input
         .split('\n')
         .map(|line| (line, match_pattern(line, &nodes)))
