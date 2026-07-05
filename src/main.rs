@@ -103,7 +103,7 @@ fn main() {
     let pattern = env::args().nth(2).unwrap();
     let mut lexer = Lexer::new(&pattern);
     let nodes = lexer.analyze();
-    println!("{:#?}", nodes);
+    // println!("{:#?}", nodes);
 
     let mut input = String::new();
     io::stdin().read_to_string(&mut input).unwrap();
