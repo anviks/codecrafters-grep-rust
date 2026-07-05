@@ -122,7 +122,8 @@ impl Lexer {
                     self.advance();
                     let min = self.number();
                     let max = if self.consume() == ',' {
-                        if self.consume() == '}' {
+                        if self.peek() == '}' {
+                            self.advance();
                             None
                         } else {
                             Some(self.number())
